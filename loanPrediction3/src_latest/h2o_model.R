@@ -1,43 +1,29 @@
----
-title: "Loan Prediction 3"
-output: html_notebook
----
-```{r}
-suppressMessages(library('h2o'))
+# Loading the libraries
+suppressMessages(library(h2o))
 suppressMessages(library(dplyr))
-localH2o <- h2o.init(nthreads = -1)
-h2o.no_progress()
-```
 
-```{r}
+# Initialize H2o cluster in localhost
+localH2o <- h2o.init(nthreads = -1)
+
+# Don't show the progress bars
+h2o.no_progress()
+
+# Loading the datasets 
 loan_train <- read.csv('train.csv', header = T)
 loan_test <- read.csv('test.csv', header = T)
-```
 
-```{r}
+# Combining the test and train datasets
 loan_test["Loan_Status"] <- "Y"
 loan_data <- rbind(loan_train, loan_test)
 rm(loan_test, loan_train)
-```
 
-## Feature Engineering
-
-```{r}
+# Cleaning the dataset and handling the outliers
 loan_data$LoanAmount[loan_data$LoanAmount >= 400] <- 400
 loan_data$LoanAmount[which(is.na(loan_data$LoanAmount))] <- median(loan_data$LoanAmount, na.rm=T)
-
 loan_data$Loan_Amount_Term[which(is.na(loan_data$Loan_Amount_Term))] <- 360
 loan_data$Married[loan_data$Married == ""] <- "Yes"
 loan_data$Married<-factor(loan_data$Married)
-
-loan_data$Total_Income <- loan_data$ApplicantIncome + loan_data$CoapplicantIncome
-loan_data$Loan_per_month <- loan_data$LoanAmount / loan_data$Loan_Amount_Term
-# interest_rate <- 9 / (12 * 100)
-# emi_nume <- loan_data$LoanAmount * interest_rate * ((1 + interest_rate)^loan_data$Loan_Amount_Term)
-# emi_denom <- ((1 + interest_rate)^loan_data$Loan_Amount_Term) - 1
-# loan_data$EMI <- emi_nume / emi_denom
-
-# loan_data$loan_to_income <- loan_data$LoanAmount / loan_data$Total_Income
+loan_data$Credit_History <- as.factor(loan_data$Credit_History)
 
 for (i in 1:dim(loan_data)[1]) {
     if (is.na(loan_data$Credit_History[i])) {
@@ -48,17 +34,22 @@ for (i in 1:dim(loan_data)[1]) {
         }
     }
 }
-loan_data$Credit_History <- as.factor(loan_data$Credit_History)
+
+# Feature Engiineering
+loan_data$Total_Income <- loan_data$ApplicantIncome + loan_data$CoapplicantIncome
+loan_data$Loan_per_month <- loan_data$LoanAmount / loan_data$Loan_Amount_Term
+
+
+# Preparing the cleaned data
 loan_data <- loan_data[, c(1:12, 14, 15, 13)]
 loan_train <- loan_data[1:614,]
 loan_test <- loan_data[615:981,]
 loan_test$Loan_Status <- NULL
 train.hex <- as.h2o(loan_train, destination_frame = "train.hex")
 test.hex <- as.h2o(loan_test, destination_frame = "test.hex")
-```
 
-## Fitting the model
-```{r}
+# Fitting the GLM model
+
 binomial.fit <- h2o.glm(
     y = "Loan_Status", 
     x = c("Credit_History","Property_Area", "Married", "Total_Income","Loan_per_month"), 
@@ -68,23 +59,9 @@ binomial.fit <- h2o.glm(
     lambda_search = T, 
     seed = 0xDECAF
     )
-binomial.fit
-```
+print(binomial.fit)
 
-```{r}
-# stopping_metric <- 'accuracy'
-# sorted_models <- h2o.getGrid(
-#     grid_id = 'glm_grid', 
-#     sort_by = stopping_metric,
-#     decreasing = TRUE
-# )
-# best_model <- h2o.getModel(sorted_models@model_ids[[1]])
-# h2o.confusionMatrix(best_model, valid = TRUE, metrics = 'accuracy')
-# best_model@model$coefficients
-# best_model@model$model_summary$regularization
-```
-
-```{r}
+# Prediction and Submission
 pred = h2o.predict(binomial.fit, test.hex)
 Loan_Status <- as.data.frame(pred)[,1]
 submission <- cbind(loan_test, Loan_Status)
@@ -92,5 +69,3 @@ submission <- submission %>%
     select(c(Loan_ID, Loan_Status))
 rownames(submission) <- 1:nrow(submission)
 write.csv(submission,file = "submission6.csv", row.names = FALSE)
-```
-
