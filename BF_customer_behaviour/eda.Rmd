@@ -17,5 +17,36 @@ test = read.csv('data/test.csv', header = T)
 ```
 
 ```{r}
-names(test)
+names(train)
+# dim(train)
+# summary(train)
+# str(train)
 ```
+
+
+## Distribution of purchase amount
+
+```{r}
+ggplot(aes(x = Purchase), data = train) +
+    geom_histogram(binwidth = 1000, fill='lightpink', color='black') +
+    theme_minimal() +
+    ggtitle("Distribution of Purchases", subtitle = "This seems normally distributed")
+```
+
+## Check if there is any outliers!!
+
+```{r}
+ggplot(aes(x = seq(550068), y = sort(Purchase)), data = train) +
+    geom_point()
+```
+
+## Purchase history of Age groups
+```{r}
+train %>%
+    group_by(Age) %>%
+    summarise(totalPurchases = sum(Purchase)) %>%
+    ggplot(aes(x = Age, y = totalPurchases)) +
+        geom_bar(stat = 'identity') +
+        theme_minimal()
+```
+
