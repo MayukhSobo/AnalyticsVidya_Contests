@@ -1,0 +1,21 @@
+---
+title: "EDA Customer Behaviour"
+output: html_notebook
+---
+
+## Loading some libraries
+```{r}
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggthemes))
+suppressMessages(library(dplyr))
+```
+
+## Loading the dataset
+```{r}
+train = read.csv('data/train.csv', header = T)
+test = read.csv('data/test.csv', header = T)
+```
+
+```{r}
+names(test)
+```
