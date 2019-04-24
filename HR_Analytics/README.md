@@ -11,17 +11,22 @@ The objective is the find from different attributes of an employee, who is the r
 
 # Procedure
 
+I trained 2 models.
 
+1. LightGBM model finetuned (OneHotEncoded features)
+2. XGBoost model finetuned (Ploynomial Features)
 
 # Results
 
+My Best Score - 0.522, rank 60 on leaderboard
 
+Best Score - 0.53+
 
 # Assumptions
 
-
+Polynomial features are linearly seperable
 
 # Reflections
 
-
+Need to try out stacking of different ensemle models
 
